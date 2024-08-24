@@ -1,15 +1,15 @@
-import type { SVGProps } from 'react'
-
+import { useState, type SVGProps } from 'react'
+import { z } from 'zod'
 import * as Checkbox from '@radix-ui/react-checkbox'
-
 import { api } from '@/utils/client/api'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 
 /**
  * QUESTION 3:
  * -----------
- * A todo has 2 statuses: "pending" and "completed"
- *  - "pending" state is represented by an unchecked checkbox
- *  - "completed" state is represented by a checked checkbox, darker background,
+ * A todo has 2 statuses: 'pending' and 'completed'
+ *  - 'pending' state is represented by an unchecked checkbox
+ *  - 'completed' state is represented by a checked checkbox, darker background,
  *    and a line-through text
  *
  * We have 2 backend apis:
@@ -63,28 +63,64 @@ import { api } from '@/utils/client/api'
  *  - https://auto-animate.formkit.com
  */
 
-export const TodoList = () => {
-  const { data: todos = [] } = api.todo.getAll.useQuery({
-    statuses: ['completed', 'pending'],
-  })
+const filterByStatuses = (filterBy: string): ('completed' | 'pending')[] => {
+  switch (filterBy) {
+    case 'all':
+      return ['completed', 'pending'];
+    case 'completed':
+      return ['completed'];
+    case 'pending':
+      return ['pending'];
+    default:
+      throw new Error(`Invalid filterBy value: ${filterBy}`);
+  }
+};
 
+export const TodoList = ({filterBy}:{filterBy:string}) => {  
+  const { data: todos = [] } = api.todo.getAll.useQuery({
+    statuses: filterByStatuses(filterBy),
+  })
+  
+  const [parent, enableAnimate] = useAutoAnimate()
+
+  const apiContext = api.useContext()
+
+  const {mutate: updateTodo} = api.todoStatus.update.useMutation({
+    onSuccess() {
+      apiContext.todo.invalidate()
+    },
+  })
+  
+  const {mutate: removeTodo} = api.todo.delete.useMutation({
+    onSuccess() {
+        apiContext.todo.invalidate()
+    },
+  })
+  
   return (
-    <ul className="grid grid-cols-1 gap-y-3">
+    <ul ref={parent} className='grid grid-cols-1 gap-y-3'>
       {todos.map((todo) => (
         <li key={todo.id}>
-          <div className="flex items-center rounded-12 border border-gray-200 px-4 py-3 shadow-sm">
-            <Checkbox.Root
-              id={String(todo.id)}
-              className="flex h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
-            >
-              <Checkbox.Indicator>
-                <CheckIcon className="h-4 w-4 text-white" />
-              </Checkbox.Indicator>
-            </Checkbox.Root>
-
-            <label className="block pl-3 font-medium" htmlFor={String(todo.id)}>
-              {todo.body}
-            </label>
+          <div className='flex items-center justify-between rounded-12 border border-gray-200 px-4 py-3 shadow-sm'>            
+            <div className='flex items-center'>
+              <Checkbox.Root
+                id={String(todo.id)}
+                onCheckedChange={(e) => updateTodo({
+                  todoId: todo.id,
+                  status: e ? 'completed' : 'pending',
+                })}
+                checked={todo.status === 'completed'}
+                className={`flex peer h-6 w-6 items-center justify-center rounded-6 border border-gray-300 focus:border-gray-700 focus:outline-none data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700`}
+              >
+                <Checkbox.Indicator>
+                  <CheckIcon className='h-4 w-4 text-white' />
+                </Checkbox.Indicator>
+              </Checkbox.Root>
+              <label className={`block pl-3 font-medium ${todo.status === 'completed' ? 'line-through text-gray-500' : ''}`} htmlFor={String(todo.id)}>
+                {todo.body}
+              </label>
+            </div>
+            <XMarkIcon className='h-8 w-8 p-1 cursor-pointer' onClick={() => removeTodo({id: todo.id})}/>
           </div>
         </li>
       ))}
@@ -95,17 +131,17 @@ export const TodoList = () => {
 const XMarkIcon = (props: SVGProps<SVGSVGElement>) => {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
+      xmlns='http://www.w3.org/2000/svg'
+      fill='none'
+      viewBox='0 0 24 24'
       strokeWidth={1.5}
-      stroke="currentColor"
+      stroke='currentColor'
       {...props}
     >
       <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M6 18L18 6M6 6l12 12"
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        d='M6 18L18 6M6 6l12 12'
       />
     </svg>
   )
@@ -114,17 +150,17 @@ const XMarkIcon = (props: SVGProps<SVGSVGElement>) => {
 const CheckIcon = (props: SVGProps<SVGSVGElement>) => {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
+      xmlns='http://www.w3.org/2000/svg'
+      fill='none'
+      viewBox='0 0 24 24'
       strokeWidth={1.5}
-      stroke="currentColor"
+      stroke='currentColor'
       {...props}
     >
       <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4.5 12.75l6 6 9-13.5"
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        d='M4.5 12.75l6 6 9-13.5'
       />
     </svg>
   )

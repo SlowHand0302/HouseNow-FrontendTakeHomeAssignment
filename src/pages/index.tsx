@@ -1,11 +1,12 @@
+import * as Tabs from '@radix-ui/react-tabs';
+import { useState } from 'react';
 import { CreateTodoForm } from '@/client/components/CreateTodoForm'
 import { TodoList } from '@/client/components/TodoList'
-
 /**
  * QUESTION 6:
  * -----------
  * Implement quick filter/tab feature so that we can quickly find todos with
- * different statuses ("pending", "completed", or both). The UI should look like
+ * different statuses ('pending', 'completed', or both). The UI should look like
  * the design on Figma.
  *
  * NOTE:
@@ -17,18 +18,35 @@ import { TodoList } from '@/client/components/TodoList'
  */
 
 const Index = () => {
+  const [tabActive, setTabActive] = useState('all')
+
   return (
-    <main className="mx-auto w-[480px] pt-12">
-      <div className="rounded-12 bg-white p-8 shadow-sm">
-        <h1 className="text-center text-4xl font-extrabold text-gray-900">
+    <main className='mx-auto w-[480px] pt-12'>
+      <div className='rounded-12 bg-white p-8 shadow-sm'>
+        <h1 className='text-center text-4xl font-extrabold text-gray-900'>
           Todo App
         </h1>
 
-        <div className="pt-10">
-          <TodoList />
+        <Tabs.Root defaultValue='all' className='pt-10' onValueChange={(e) => setTabActive(e)}>
+          <Tabs.List className='flex gap-2'>
+            <Tabs.Trigger className='p-[12px_24px] border border-gray-200 text-[14px] font-bold data-[state=active]:bg-gray-700 data-[state=active]:text-white rounded-full' value='all'>
+              All
+            </Tabs.Trigger>
+            <Tabs.Trigger className='p-[12px_24px] border border-gray-200 text-[14px] font-bold data-[state=active]:bg-gray-700 data-[state=active]:text-white rounded-full' value='pending'>
+              Pending
+            </Tabs.Trigger>
+            <Tabs.Trigger className='p-[12px_24px] border border-gray-200 text-[14px] font-bold data-[state=active]:bg-gray-700 data-[state=active]:text-white rounded-full' value='completed'>
+              Compeleted
+            </Tabs.Trigger>
+          </Tabs.List>
+          
+        </Tabs.Root>
+
+        <div className='pt-10'>
+          <TodoList filterBy={tabActive}/>
         </div>
 
-        <div className="pt-10">
+        <div className='pt-10'>
           <CreateTodoForm />
         </div>
       </div>
